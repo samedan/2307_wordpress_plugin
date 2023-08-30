@@ -9,12 +9,53 @@
 */
 
 class WordCountAndTimePlugin {
+
   // CONSTRUCTOR 
   function __construct(){ // function when calling a class
-     add_action('admin_menu', array($this, 'adminPage'));
+    add_action('admin_menu', array($this, 'adminPage'));
     add_action('admin_init', array($this, 'settings'));
+    add_filter('the_content', array($this, 'ifWrap')); // Filter if WordCount is needed
   }
   // END CONSTRUCTOR 
+
+  // Filter if WordCount is needed
+  function ifWrap($content) {
+    if(is_main_query() AND is_single() AND // if post type
+      (get_option('wcp_wordcount', '1') // wordcount is checked
+        OR get_option('wcp_charactercount', '1')
+        OR get_option('wcp_readtime', '1')
+      )) {
+        return $this->createHTML($content);
+    }
+    return $content;
+  }
+
+  function createHTML($content) {
+    $html = '<h3>'. esc_html(get_option('wcp_headline', 'Post Statistics')).'</h3><p>';
+
+    // Calculate WordCount
+    if(get_option('wcp_wordcount', '1') OR get_option('wcp_readtime', '1')) {
+      $wordCount = str_word_count(strip_tags($content));
+    }
+
+    if(get_option('wcp_wordcount', '1') ) {
+      $html .= 'This post has '.$wordCount. ' words.<br>';
+    }
+    if(get_option('wcp_charactercount', '1') ) {
+      $html .= 'This post has '.strlen(strip_tags($content)). ' characters.<br>';
+    }
+    if(get_option('wcp_readtime', '1') ) {
+      $html .= 'This post will take '.round($wordCount/225). ' minute(s) to read.<br>';
+    }
+    $html .= '</p>';
+    
+    // add to the content of post
+    if(get_option('wcp_location', '0') == '0') {
+       // add to the begginning of post
+       return $html .$content;
+    } return $content.$html;
+
+  }
 
   function settings() {
     add_settings_section(
@@ -28,7 +69,7 @@ class WordCountAndTimePlugin {
     add_settings_field( // how the field is displayed on the backend
        'wcp_location', 
        'Display Location', // label
-       array($this, 'locationHTML'), // the HTML for the inout type
+       array($this, 'locationHTML'), // the HTML for the input type
        'word-count-settings-page', //slug
        'wcp_first_section' // the Section where the field is added
      ); // HTML input field
@@ -125,7 +166,8 @@ class WordCountAndTimePlugin {
      } return $input;
   }
 
-  // Reausable Checkbox HTML function
+  ///////////////////////////////////
+  // Reusable Checkbox HTML function
   function checkboxHTML($args) { ?>
    <input type="checkbox" name="<?php echo $args['theName'] ?>" value="1" <?php checked(get_option($args['theName']), '1') ?>>
  <?php }
@@ -167,7 +209,7 @@ class WordCountAndTimePlugin {
         <h1>Word Count Settings</h1>
          <form action="options.php" method="POST">
            <?php
-             settings_fields('wordcountplugin');  // register_setting()
+             settings_fields('wordcountplugin');  // register_setting(), group name of plugin
              do_settings_sections('word-count-settings-page'); // read this file functions
              submit_button();
            ?>
