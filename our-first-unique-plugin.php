@@ -6,6 +6,8 @@
   Version: 1.0
   Author: Dan
   Author URI: https://articole-smart.eu
+  Text Domain: wcpdomain
+  Domain Path: /languages
 */
 
 class WordCountAndTimePlugin {
@@ -15,8 +17,14 @@ class WordCountAndTimePlugin {
     add_action('admin_menu', array($this, 'adminPage'));
     add_action('admin_init', array($this, 'settings'));
     add_filter('the_content', array($this, 'ifWrap')); // Filter if WordCount is needed
+    add_action('init', array($this, 'languages'));
   }
   // END CONSTRUCTOR 
+
+  // LANGUAGES
+  function languages() {
+    load_plugin_textdomain('wcpdomain', false, dirname(plugin_basename(__FILE__)).'/languages');
+  }
 
   // Filter if WordCount is needed
   function ifWrap($content) {
@@ -39,7 +47,7 @@ class WordCountAndTimePlugin {
     }
 
     if(get_option('wcp_wordcount', '1') ) {
-      $html .= 'This post has '.$wordCount. ' words.<br>';
+      $html .=  esc_html__('This post has', 'wcpdomain'). ' '.$wordCount. ' '.__('words', 'wcpdomain').'.<br>';
     }
     if(get_option('wcp_charactercount', '1') ) {
       $html .= 'This post has '.strlen(strip_tags($content)). ' characters.<br>';
@@ -192,7 +200,7 @@ class WordCountAndTimePlugin {
   function adminPage() { 
    add_options_page(
     'Word Count Settings',
-    'Word Count', // the title in the settings menu (on the page menu)
+    __('Word Count', 'wcpdomain'), // the title in the settings menu (on the page menu)
     'manage_options', //for admins
     'word-count-settings-page', // slug name (url after /wpadmin)
     array(
